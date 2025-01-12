@@ -93,13 +93,18 @@ def main():
     dh = DatasetHandler(threshold=10, print_init=True)
     df_prices = dh.get_nth_card(50)
 
-    classic_cards = ['wasteland', 'force of will']
+    classic_cards = ['wasteland', 'force of will', 'mox diamond', 'sheoldred, the apocalypse']
     for card in classic_cards:
-        card_id = dh.card_definitions.get_ids(card)[-1]
-        appendix = dh.get_card_by_id(card_id, columns=[card], to_df=False)
+        try:
+            card_id = dh.card_definitions.get_ids(card)[-1]
+            appendix = dh.get_card_by_id(card_id, columns=[card], to_df=False)
 
-        df_prices.insert(1, card, appendix)
+            df_prices.insert(1, card, appendix)
 
+        except IndexError:
+            pass
+
+    df_prices.insert(0, 20, dh.get_nth_card(10, to_df=False))
     sns.lineplot(df_prices)
 
     plt.gcf().autofmt_xdate()
