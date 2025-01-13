@@ -3,6 +3,7 @@ import json
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import numpy as np
 
 
 DATE_RANGE = pd.date_range(start='2022-01-01', end='2024-12-31').tolist()
@@ -34,7 +35,7 @@ class DayByDayData(list):
             try:
                 return {str(_key.key): _key.value for _key in self}[key]
             except KeyError:
-                return 0
+                return None
         else:
             return super().__getitem__(key)
 
@@ -78,6 +79,19 @@ class DatasetHandler(list):
         with open(output_file, 'w') as of:
             json.dump(dump_dict, of)
 
+    def __getitem__(self, key):
+        result = []
+        for item in self:
+            if isinstance(item[key], KVPair):
+                result.append(item[key].value)
+            else:
+                result.append(item[key])
+
+        return result
+
+    def get_covariance(self, key1, key2):
+        return np.cov(self[key1], self[key2])[0, 1]
+
 
 class CardDefinitions(dict):
     def __init__(self, source='card-definitions.txt'):
@@ -93,7 +107,7 @@ def main():
     dh = DatasetHandler(threshold=10, print_init=True)
     df_prices = dh.get_nth_card(50)
 
-    classic_cards = ['wasteland', 'force of will', 'mox diamond', 'sheoldred, the apocalypse']
+    classic_cards = ['wasteland', 'force of will', 'mox diamond', 'sheoldred, the apocalypse', 'lotus petal']
     for card in classic_cards:
         try:
             card_id = dh.card_definitions.get_ids(card)[-1]
@@ -104,11 +118,14 @@ def main():
         except IndexError:
             pass
 
-    df_prices.insert(0, 20, dh.get_nth_card(10, to_df=False))
-    sns.lineplot(df_prices)
+    #df_prices.insert(0, 20, dh.get_nth_card(10, to_df=False))
 
+    df_prices = df_prices.loc['2024-01-01':'2024-12-31']
+    sns.lineplot(df_prices)
     plt.gcf().autofmt_xdate()
     plt.show()
+
+    print(dh.get_covariance(50, '650'))
 
 
 if __name__ == '__main__':
